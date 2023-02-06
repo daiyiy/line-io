@@ -93,16 +93,20 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
             }
         }
 
-        fun sequence(): Sequence<T> {
-            return Sequence(::getIterator).map(function::apply)
-        }
-
-        fun <R> sequence(function: Function<Sequence<T>, R>): R {
-            return function.apply(sequence())
-        }
+        fun sequence(): Sequence<T> = fromIterator { it.asSequence() }
 
         fun stream(): DataStream<T> = DataStream.of {
             getIterator().asSequence().asStream().map(function)
+        }
+
+        fun iterator() = object : Iterator<T> {
+            val iterator = getIterator()
+            override fun hasNext(): Boolean = iterator.hasNext()
+            override fun next(): T = function.apply(iterator.next())
+        }
+
+        fun <E> fromIterator(function: Function<Iterator<T>, E>) : E {
+            return function.apply(iterator())
         }
     }
 

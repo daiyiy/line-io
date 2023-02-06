@@ -5,6 +5,7 @@ import java.util.*
 /**
  * @author wolray
  */
+@Deprecated("no better than LinkedList", ReplaceWith("LinkedList"))
 class DataList<T> : AbstractList<T>() {
     @Transient
     private val dummy = Node<T>()

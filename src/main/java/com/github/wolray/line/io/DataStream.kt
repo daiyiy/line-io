@@ -1,5 +1,6 @@
 package com.github.wolray.line.io
 
+import java.util.LinkedList
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
@@ -26,7 +27,7 @@ class DataStream<T>(private var supplier: Supplier<Stream<T>>) :
 
     fun reuse() = apply {
         if (!isReusable()) {
-            ts = supplier.get().collect(Collectors.toCollection { DataList<T>() })
+            ts = supplier.get().collect(Collectors.toCollection { LinkedList<T>() })
             supplier = Supplier { ts!!.stream() }
         }
     }

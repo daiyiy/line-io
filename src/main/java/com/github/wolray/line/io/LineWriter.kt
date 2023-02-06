@@ -7,6 +7,7 @@ import java.io.IOException
 import java.io.UncheckedIOException
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
 import java.util.function.Function
 
 /**
@@ -31,17 +32,25 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
         protected open fun preprocess(bw: BufferedWriter) {}
 
         fun asyncWith(iterable: Iterable<T>) {
-            CompletableFuture.runAsync { with(iterable) }
+            asyncWith(iterable::forEach)
+        }
+
+        fun asyncWith(seq: Consumer<Consumer<T>>) {
+            CompletableFuture.runAsync { with(seq) }
         }
 
         fun with(iterable: Iterable<T>) {
+            with(iterable::forEach)
+        }
+
+        fun with(seq: Consumer<Consumer<T>>) {
             try {
                 BufferedWriter(FileWriter(file, append)).use { bw ->
                     if (!append) {
                         preprocess(bw)
                         headers.forEach { bw.writeLine(it) }
                     }
-                    iterable.forEach { bw.writeLine(formatter.apply(it)) }
+                    seq.accept { bw.writeLine(formatter.apply(it)) }
                 }
             } catch (e: IOException) {
                 throw UncheckedIOException(e)
