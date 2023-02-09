@@ -93,7 +93,7 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
             }
         }
 
-        fun sequence(): Sequence<T> = fromIterator { it.asSequence() }
+        fun sequence(): Sequence<T> = Sequence(::iterator)
 
         fun stream(): DataStream<T> = DataStream.of {
             getIterator().asSequence().asStream().map(function)
@@ -105,8 +105,8 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
             override fun next(): T = function.apply(iterator.next())
         }
 
-        fun <E> fromIterator(function: Function<Iterator<T>, E>) : E {
-            return function.apply(iterator())
+        fun <E> mapIterable(function: Function<Iterable<T>, E>): E {
+            return function.apply(Iterable { iterator() })
         }
     }
 
