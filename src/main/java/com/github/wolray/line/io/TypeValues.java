@@ -75,7 +75,7 @@ public class TypeValues<T> {
         if (selector != null && selector.getPojo()) {
             return Seq.of(type.getDeclaredFields())
                 .filter(f -> Modifier.isPrivate(f.getModifiers()))
-                .peek(f -> f.setAccessible(true));
+                .onEach(f -> f.setAccessible(true));
         } else {
             return Seq.of(type.getFields());
         }
