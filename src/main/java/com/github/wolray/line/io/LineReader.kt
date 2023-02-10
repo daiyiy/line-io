@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSON
 import com.github.wolray.seq.Seq
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import java.io.*
+import java.io.BufferedReader
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.util.*
 import java.util.function.Function
 import java.util.function.Supplier
@@ -19,6 +21,8 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
 
     abstract fun toIterator(source: S): Iterator<V>
 
+    abstract fun toSeq(source: S): Seq<V>
+
     protected open fun reorder(slots: IntArray) {
         throw NotImplementedError()
     }
@@ -29,6 +33,15 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
         override fun toIterator(source: Supplier<InputStream>): Iterator<String> {
             return BufferedReader(InputStreamReader(source.get())).lineSequence().iterator()
         }
+
+        override fun toSeq(source: Supplier<InputStream>): Seq<String> = Seq {
+            BufferedReader(InputStreamReader(source.get())).use { reader ->
+                while (true) {
+                    val s = reader.readLine()
+                    if (s != null) it.accept(s) else break
+                }
+            }
+        }
     }
 
     class Excel<T> internal constructor(
@@ -37,11 +50,11 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
     ) : LineReader<Supplier<InputStream>, Row, T>(converter) {
 
         override fun toIterator(source: Supplier<InputStream>): Iterator<Row> {
-            return try {
-                XSSFWorkbook(source.get()).getSheetAt(sheetIndex).iterator()
-            } catch (e: IOException) {
-                throw UncheckedIOException(e)
-            }
+            return XSSFWorkbook(source.get()).getSheetAt(sheetIndex).iterator()
+        }
+
+        override fun toSeq(source: Supplier<InputStream>): Seq<Row> {
+            return Seq.of(XSSFWorkbook(source.get()).getSheetAt(sheetIndex))
         }
 
         override fun reorder(slots: IntArray) {
@@ -80,6 +93,11 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
             slots?.also { if (it.isNotEmpty()) reorder(it) }
         }
 
+        protected open fun preprocess(v: V): Boolean {
+            slots?.also { if (it.isNotEmpty()) reorder(it) }
+            return false
+        }
+
         private fun getIterator(): Iterator<V> {
             return try {
                 toIterator(source).apply {
@@ -96,7 +114,7 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
 
         fun sequence(): Sequence<T> = Sequence(::iterator)
 
-        @Deprecated("Use better Seq", replaceWith = ReplaceWith("toSeq"))
+        @Deprecated("Use better toSeq", replaceWith = ReplaceWith("toSeq"))
         fun stream(): DataStream<T> = DataStream.of {
             getIterator().asSequence().asStream().map(function)
         }
@@ -107,7 +125,18 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
             override fun next(): T = function.apply(iterator.next())
         }
 
-        fun toSeq(): Seq<T> = Seq { iterator().forEachRemaining(it) }
+        fun toSeq(): Seq<T> = Seq {
+            try {
+                val a = intArrayOf(skip)
+                toSeq(source).supply { t ->
+                    if (a[0] < 0 || a[0]-- == 0 && !preprocess(t)) {
+                        it.accept(function.apply(t))
+                    }
+                }
+            } catch (e: Throwable) {
+                if (errorType?.isAssignableFrom(e.javaClass) != true) throw e
+            }
+        }
     }
 
     companion object {

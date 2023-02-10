@@ -41,7 +41,16 @@ class CsvReader<T> internal constructor(
 
         override fun preprocess(iterator: Iterator<String>) {
             cols?.also { if (it.isNotEmpty()) setHeader(iterator.next(), it) }
-                ?: super.preprocess(iterator)
+        }
+
+        override fun preprocess(v: String): Boolean {
+            cols?.let {
+                if (it.isNotEmpty()) {
+                    setHeader(v, it)
+                    return true
+                }
+            }
+            return false
         }
     }
 
