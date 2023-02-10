@@ -1,22 +1,22 @@
 package com.github.wolray.line.io;
 
+import com.github.wolray.seq.ArraySeq;
+import com.github.wolray.seq.Seq;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 
 /**
  * @author wolray
  */
 public class TypeValues<T> {
     public final Class<T> type;
-    public final Field[] values;
+    public final ArraySeq<Field> values;
 
     public TypeValues(Class<T> type) {
         this(type, FieldSelector.of(type.getAnnotation(Fields.class)));
@@ -24,10 +24,10 @@ public class TypeValues<T> {
 
     public TypeValues(Class<T> type, FieldSelector selector) {
         this.type = type;
-        Stream<Field> stream = getFields(type, selector)
+        values = getFields(type, selector)
             .filter(f -> checkModifier(f.getModifiers()));
-        Predicate<Field> predicate = selector.toPredicate();
-        values = stream.filter(predicate).toArray(Field[]::new);
+            .filter(selector.toPredicate())
+            .toList();
     }
 
     private static boolean checkModifier(int modifier) {
@@ -54,17 +54,30 @@ public class TypeValues<T> {
         }
     }
 
-    Attr[] toAttrs() {
-        return Arrays.stream(values).map(Attr::new).toArray(Attr[]::new);
+    private static <S, T> T safeApply(Function<S, T> function, S s) {
+        return safeApply(function, s, null);
     }
 
-    private Stream<Field> getFields(Class<T> type, FieldSelector selector) {
+    private static <S, T> T safeApply(Function<S, T> function, S s, T defaultValue) {
+        if (s != null) {
+            try {
+                return function.apply(s);
+            } catch (Throwable ignore) {}
+        }
+        return defaultValue;
+    }
+
+    ArraySeq<Attr> toAttrs() {
+        return values.map(Attr::new).toList();
+    }
+
+    private Seq<Field> getFields(Class<T> type, FieldSelector selector) {
         if (selector != null && selector.getPojo()) {
-            return Arrays.stream(type.getDeclaredFields())
+            return Seq.of(type.getDeclaredFields())
                 .filter(f -> Modifier.isPrivate(f.getModifiers()))
                 .peek(f -> f.setAccessible(true));
         } else {
-            return Arrays.stream(type.getFields());
+            return Seq.of(type.getFields());
         }
     }
 
@@ -125,18 +138,5 @@ public class TypeValues<T> {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    private static <S, T> T safeApply(Function<S, T> function, S s) {
-        return safeApply(function, s, null);
-    }
-
-    private static <S, T> T safeApply(Function<S, T> function, S s, T defaultValue) {
-        if (s != null) {
-            try {
-                return function.apply(s);
-            } catch (Throwable ignore) {}
-        }
-        return defaultValue;
     }
 }

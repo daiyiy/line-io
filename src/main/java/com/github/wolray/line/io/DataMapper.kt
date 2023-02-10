@@ -37,21 +37,13 @@ class DataMapper<T> @JvmOverloads constructor(
         private val selector = FieldSelector()
 
         fun pojo() = apply { selector.pojo = true }
-
         fun use(vararg fields: String) = apply { selector.use = arrayOf(*fields) }
-
         fun omit(vararg fields: String) = apply { selector.omit = arrayOf(*fields) }
-
         fun useRegex(regex: String) = apply { selector.useRegex = regex }
-
         fun omitRegex(regex: String) = apply { selector.omitRegex = regex }
-
         fun build() = DataMapper(TypeValues(type, selector))
-
         fun build(sep: String) = DataMapper(TypeValues(type, selector), sep)
-
         fun toReader(sep: String) = build(sep).toReader()
-
         fun toWriter(sep: String) = build(sep).toWriter()
     }
 

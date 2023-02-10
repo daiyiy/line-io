@@ -1,5 +1,7 @@
 package com.github.wolray.line.io;
 
+import com.github.wolray.seq.ArraySeq;
+import com.github.wolray.seq.Seq;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -7,11 +9,9 @@ import org.apache.poi.ss.usermodel.Row;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.*;
-import java.util.stream.Stream;
 
 import static com.github.wolray.line.io.TypeValues.invoke;
 
@@ -20,7 +20,7 @@ import static com.github.wolray.line.io.TypeValues.invoke;
  */
 public class ValuesConverter<V, T> implements Function<V, T> {
     protected final TypeValues<T> typeValues;
-    protected final TypeValues.Attr[] attrs;
+    protected final ArraySeq<TypeValues.Attr> attrs;
     private final ToIntFunction<V> sizeGetter;
     private final Constructor<T> constructor;
     private BiConsumer<T, V> filler;
@@ -87,17 +87,16 @@ public class ValuesConverter<V, T> implements Function<V, T> {
         if (simpleMethod.paraType == String.class) {
             Fields fields = method.getAnnotation(Fields.class);
             Predicate<Field> predicate = FieldSelector.toPredicate(fields);
-            Stream<TypeValues.Attr> stream = Arrays.stream(attrs)
-                .filter(a -> predicate.test(a.field));
+            Seq<TypeValues.Attr> seq = attrs.filter(a -> predicate.test(a.field));
             method.setAccessible(true);
             if (returnType == String.class) {
                 UnaryOperator<String> mapper = s -> (String)invoke(method, s);
-                stream.forEach(a -> a.mapper = mapper);
+                seq.supply(a -> a.mapper = mapper);
             } else {
                 Function<String, Object> parser = s -> invoke(method, s);
-                stream
+                seq
                     .filter(a -> a.field.getType() == returnType)
-                    .forEach(a -> a.parser = parser);
+                    .supply(a -> a.parser = parser);
             }
         }
     }
@@ -115,7 +114,7 @@ public class ValuesConverter<V, T> implements Function<V, T> {
     }
 
     private BiConsumer<T, V> fillAll() {
-        TypeValues.Attr[] attrs = this.attrs;
+        TypeValues.Attr[] attrs = this.attrs.toObjArray(TypeValues.Attr[]::new);
         int len = attrs.length;
         ToIntFunction<V> sizeGetter = this.sizeGetter;
         return (t, v) -> {
@@ -127,7 +126,7 @@ public class ValuesConverter<V, T> implements Function<V, T> {
     }
 
     private BiConsumer<T, V> fillBySlots(int[] slots) {
-        TypeValues.Attr[] attrs = this.attrs;
+        TypeValues.Attr[] attrs = this.attrs.toObjArray(TypeValues.Attr[]::new);
         int len = Math.min(attrs.length, slots.length);
         ToIntFunction<V> sizeGetter = this.sizeGetter;
         return (t, v) -> {

@@ -1,9 +1,9 @@
 package com.github.wolray.line.io;
 
+import com.github.wolray.seq.ArraySeq;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -14,7 +14,7 @@ import static com.github.wolray.line.io.TypeValues.invoke;
  */
 public class ValuesJoiner<T> {
     private final TypeValues<T> typeValues;
-    private final TypeValues.Attr[] attrs;
+    private final ArraySeq<TypeValues.Attr> attrs;
 
     public ValuesJoiner(TypeValues<T> typeValues) {
         this.typeValues = typeValues;
@@ -24,9 +24,7 @@ public class ValuesJoiner<T> {
 
     private void initFormatters() {
         Function<Object, String> toString = Object::toString;
-        for (TypeValues.Attr attr : attrs) {
-            attr.formatter = toString;
-        }
+        attrs.supply(a -> a.formatter = toString);
         TypeValues.processSimpleMethods(typeValues.type, this::processMethod);
     }
 
@@ -38,10 +36,9 @@ public class ValuesJoiner<T> {
             Function<Object, String> function = s -> (String)invoke(method, s);
             Fields fields = method.getAnnotation(Fields.class);
             Predicate<Field> predicate = FieldSelector.toPredicate(fields);
-            Arrays.stream(attrs)
-                .filter(a -> predicate.test(a.field))
-                .filter(a -> a.field.getType() == paraType)
-                .forEach(a -> a.formatter = function);
+            attrs
+                .filter(a -> predicate.test(a.field) && a.field.getType() == paraType)
+                .supply(a -> a.formatter = function);
         }
     }
 
@@ -50,11 +47,7 @@ public class ValuesJoiner<T> {
     }
 
     String join(String sep, Function<TypeValues.Attr, String> function) {
-        StringJoiner joiner = new StringJoiner(sep);
-        for (TypeValues.Attr attr : attrs) {
-            joiner.add(function.apply(attr));
-        }
-        return joiner.toString();
+        return attrs.join(sep, function);
     }
 
     public Function<T, String> toFormatter(String sep) {

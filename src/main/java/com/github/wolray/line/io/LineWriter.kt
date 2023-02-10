@@ -1,6 +1,7 @@
 package com.github.wolray.line.io
 
 import com.alibaba.fastjson.JSON
+import com.github.wolray.seq.Seq
 import java.io.BufferedWriter
 import java.io.FileWriter
 import java.io.IOException
@@ -35,7 +36,7 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
             asyncWith(iterable::forEach)
         }
 
-        fun asyncWith(seq: Consumer<Consumer<T>>) {
+        fun asyncWith(seq: Seq<T>) {
             CompletableFuture.runAsync { with(seq) }
         }
 
@@ -43,14 +44,14 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
             with(iterable::forEach)
         }
 
-        fun with(seq: Consumer<Consumer<T>>) {
+        fun with(seq: Seq<T>) {
             try {
                 BufferedWriter(FileWriter(file, append)).use { bw ->
                     if (!append) {
                         preprocess(bw)
                         headers.forEach { bw.writeLine(it) }
                     }
-                    seq.accept { bw.writeLine(formatter.apply(it)) }
+                    seq.supply { bw.writeLine(formatter.apply(it)) }
                 }
             } catch (e: IOException) {
                 throw UncheckedIOException(e)

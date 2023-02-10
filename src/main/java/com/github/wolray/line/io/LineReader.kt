@@ -1,6 +1,7 @@
 package com.github.wolray.line.io
 
 import com.alibaba.fastjson.JSON
+import com.github.wolray.seq.Seq
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.*
@@ -95,6 +96,7 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
 
         fun sequence(): Sequence<T> = Sequence(::iterator)
 
+        @Deprecated("Use better Seq", replaceWith = ReplaceWith("toSeq"))
         fun stream(): DataStream<T> = DataStream.of {
             getIterator().asSequence().asStream().map(function)
         }
@@ -105,9 +107,7 @@ abstract class LineReader<S, V, T> protected constructor(protected val function:
             override fun next(): T = function.apply(iterator.next())
         }
 
-        fun <E> mapIterable(function: Function<Iterable<T>, E>): E {
-            return function.apply(Iterable { iterator() })
-        }
+        fun toSeq(): Seq<T> = Seq { iterator().forEachRemaining(it) }
     }
 
     companion object {

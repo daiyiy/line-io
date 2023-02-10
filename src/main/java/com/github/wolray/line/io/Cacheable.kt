@@ -36,7 +36,7 @@ abstract class Cacheable<T, S> {
                 }
             }
 
-            override fun write(ts: List<T>) = writer.invoke().write(path).also {
+            override fun write(ts: Iterable<T>) = writer.invoke().write(path).also {
                 if (it is CsvWriter.Session) {
                     it.autoHeader()
                 }
@@ -60,6 +60,6 @@ abstract class Cacheable<T, S> {
     interface Cache<T> {
         fun exists(): Boolean
         fun read(): LineReader<*, *, T>.Session
-        fun write(ts: List<T>)
+        fun write(ts: Iterable<T>)
     }
 }

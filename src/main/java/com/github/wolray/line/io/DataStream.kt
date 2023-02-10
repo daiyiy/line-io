@@ -13,6 +13,7 @@ import kotlin.streams.asStream
 /**
  * @author wolray
  */
+@Deprecated("Too ugly, use Seq instead")
 class DataStream<T>(private var supplier: Supplier<Stream<T>>) :
     Chainable<DataStream<T>>,
     Cacheable<T, DataStream<T>>() {
