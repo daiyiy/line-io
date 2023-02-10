@@ -25,7 +25,7 @@ public class TypeValues<T> {
     public TypeValues(Class<T> type, FieldSelector selector) {
         this.type = type;
         values = getFields(type, selector)
-            .filter(f -> checkModifier(f.getModifiers()));
+            .filter(f -> checkModifier(f.getModifiers()))
             .filter(selector.toPredicate())
             .toList();
     }
