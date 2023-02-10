@@ -35,7 +35,7 @@ public class ValuesJoiner<T> {
             method.setAccessible(true);
             Function<Object, String> function = s -> (String)invoke(method, s);
             Fields fields = method.getAnnotation(Fields.class);
-            Predicate<Field> predicate = FieldSelector.toPredicate(fields);
+            Predicate<Field> predicate = DataMapper.toTest(fields);
             attrs
                 .filter(a -> predicate.test(a.field) && a.field.getType() == paraType)
                 .supply(a -> a.formatter = function);
@@ -43,14 +43,10 @@ public class ValuesJoiner<T> {
     }
 
     String join(String sep) {
-        return join(sep, a -> a.field.getName());
-    }
-
-    String join(String sep, Function<TypeValues.Attr, String> function) {
-        return attrs.join(sep, function);
+        return attrs.join(sep, a -> a.field.getName());
     }
 
     public Function<T, String> toFormatter(String sep) {
-        return t -> join(sep, a -> a.format(a.get(t)));
+        return t -> attrs.join(sep, a -> a.format(a.get(t)));
     }
 }

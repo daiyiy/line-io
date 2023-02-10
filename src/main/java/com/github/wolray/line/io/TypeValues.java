@@ -15,23 +15,20 @@ import java.util.function.UnaryOperator;
  * @author wolray
  */
 public class TypeValues<T> {
+    public static final int STF = Modifier.STATIC | Modifier.FINAL | Modifier.TRANSIENT;
     public final Class<T> type;
     public final ArraySeq<Field> values;
 
     public TypeValues(Class<T> type) {
-        this(type, FieldSelector.of(type.getAnnotation(Fields.class)));
+        this(type, null);
     }
 
-    public TypeValues(Class<T> type, FieldSelector selector) {
+    public TypeValues(Class<T> type, Fields fields) {
         this.type = type;
-        values = getFields(type, selector)
-            .filter(f -> checkModifier(f.getModifiers()))
-            .filter(selector.toPredicate())
+        values = getFields(type, fields)
+            .filter(f -> (f.getModifiers() & STF) == 0)
+            .filter(DataMapper.toTest(fields))
             .toList();
-    }
-
-    private static boolean checkModifier(int modifier) {
-        return (modifier & (Modifier.STATIC | Modifier.FINAL | Modifier.TRANSIENT)) == 0;
     }
 
     static Object invoke(Method method, Object o) {
@@ -71,8 +68,8 @@ public class TypeValues<T> {
         return values.map(Attr::new).toList();
     }
 
-    private Seq<Field> getFields(Class<T> type, FieldSelector selector) {
-        if (selector != null && selector.getPojo()) {
+    private Seq<Field> getFields(Class<T> type, Fields fields) {
+        if (fields != null && fields.pojo()) {
             return Seq.of(type.getDeclaredFields())
                 .filter(f -> Modifier.isPrivate(f.getModifiers()))
                 .onEach(f -> f.setAccessible(true));

@@ -32,10 +32,12 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
 
         protected open fun preprocess(bw: BufferedWriter) {}
 
+        @Deprecated("not necessary", ReplaceWith("CompletableFuture.runAsync"))
         fun asyncWith(iterable: Iterable<T>) {
             asyncWith(iterable::forEach)
         }
 
+        @Deprecated("not necessary", ReplaceWith("CompletableFuture.runAsync"))
         fun asyncWith(seq: Seq<T>) {
             CompletableFuture.runAsync { with(seq) }
         }

@@ -86,7 +86,7 @@ public class ValuesConverter<V, T> implements Function<V, T> {
         Class<?> returnType = simpleMethod.returnType;
         if (simpleMethod.paraType == String.class) {
             Fields fields = method.getAnnotation(Fields.class);
-            Predicate<Field> predicate = FieldSelector.toPredicate(fields);
+            Predicate<Field> predicate = DataMapper.toTest(fields);
             Seq<TypeValues.Attr> seq = attrs.filter(a -> predicate.test(a.field));
             method.setAccessible(true);
             if (returnType == String.class) {
@@ -143,7 +143,7 @@ public class ValuesConverter<V, T> implements Function<V, T> {
         } catch (Throwable e) {
             String str;
             if (values instanceof String[]) {
-                str = String.join(DataMapper.defaultSep, (String[])values);
+                str = String.join(DataMapper.DEFAULT_SEP, (String[])values);
             } else {
                 str = values.toString();
             }
