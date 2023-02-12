@@ -23,7 +23,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
     protected abstract fun toIterator(source: S): Iterator<V>
     protected abstract fun toSeq(source: S): Seq<V>
 
-    class Csv<T> internal constructor(val sep: String, valuesConverter: ValuesConverter.Csv<T>) :
+    open class Csv<T> internal constructor(val sep: String, valuesConverter: ValuesConverter.Csv<T>) :
         LineReader<InputSource, List<String>, T>(valuesConverter),
         IsReader<LineReader<InputSource, List<String>, T>.Session> {
 
