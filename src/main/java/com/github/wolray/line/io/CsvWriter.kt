@@ -16,7 +16,7 @@ class CsvWriter<T> internal constructor(
         private var utf8 = false
 
         override fun markUtf8() = apply { utf8 = true }
-        override fun autoHeader() = apply { addHeader(joiner.join(sep)) }
+        override fun autoHeader() = apply { addHeader(joiner.joinFields(sep)) }
 
         override fun columnNames(vararg names: String) = apply {
             if (names.isNotEmpty()) {

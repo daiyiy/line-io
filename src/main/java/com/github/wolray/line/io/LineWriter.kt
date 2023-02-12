@@ -8,7 +8,6 @@ import java.io.IOException
 import java.io.UncheckedIOException
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
 import java.util.function.Function
 
 /**
@@ -34,19 +33,14 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
 
         @Deprecated("not necessary", ReplaceWith("CompletableFuture.runAsync"))
         fun asyncWith(iterable: Iterable<T>) {
-            asyncWith(iterable::forEach)
-        }
-
-        @Deprecated("not necessary", ReplaceWith("CompletableFuture.runAsync"))
-        fun asyncWith(seq: Seq<T>) {
-            CompletableFuture.runAsync { with(seq) }
+            CompletableFuture.runAsync { with(iterable) }
         }
 
         fun with(iterable: Iterable<T>) {
-            with(iterable::forEach)
+            withSeq(iterable::forEach)
         }
 
-        fun with(seq: Seq<T>) {
+        fun withSeq(seq: Seq<T>) {
             try {
                 BufferedWriter(FileWriter(file, append)).use { bw ->
                     if (!append) {

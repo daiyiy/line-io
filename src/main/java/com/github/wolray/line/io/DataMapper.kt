@@ -2,7 +2,6 @@ package com.github.wolray.line.io
 
 import java.lang.reflect.Field
 import java.util.function.Function
-import java.util.function.Predicate
 
 /**
  * @author wolray
@@ -11,7 +10,7 @@ class DataMapper<T> @JvmOverloads constructor(
     val typeValues: TypeValues<T>,
     val sep: String = DEFAULT_SEP
 ) {
-    private val converter by lazy { ValuesConverter.Text(typeValues) }
+    private val converter by lazy { ValuesConverter.Csv(typeValues) }
     private val joiner by lazy { ValuesJoiner(typeValues) }
     private val parser by lazy { toParser(sep) }
     private val formatter by lazy { toFormatter(sep) }
@@ -24,10 +23,10 @@ class DataMapper<T> @JvmOverloads constructor(
     fun toFormatter(sep: String): Function<T, String> = joiner.toFormatter(sep)
 
     @JvmOverloads
-    fun joinFields(sep: String = this.sep): String = joiner.join(sep)
+    fun joinFields(sep: String = this.sep): String = joiner.joinFields(sep)
 
     @JvmOverloads
-    fun toReader(sep: String = this.sep) = CsvReader(converter, sep)
+    fun toReader(sep: String = this.sep) = LineReader.Csv(sep, converter)
 
     @JvmOverloads
     fun toWriter(sep: String = this.sep) = CsvWriter(joiner, sep)
@@ -63,40 +62,39 @@ class DataMapper<T> @JvmOverloads constructor(
 
         @JvmStatic
         @JvmOverloads
-        @Deprecated("Bad name", ReplaceWith("by"))
+        @Deprecated("Bad name, use from instead", ReplaceWith("from"))
         fun <T> simple(type: Class<T>, sep: String = DEFAULT_SEP) = DataMapper(TypeValues(type), sep)
 
         @JvmStatic
         @JvmOverloads
-        fun <T> by(type: Class<T>, sep: String = DEFAULT_SEP) = DataMapper(TypeValues(type), sep)
+        fun <T> from(type: Class<T>, sep: String = DEFAULT_SEP) = DataMapper(TypeValues(type), sep)
 
         @JvmStatic
-        @Deprecated("Bad name", ReplaceWith("builder"))
+        @Deprecated("Bad name, use builder instead", ReplaceWith("builder"))
         fun <T> of(type: Class<T>) = Builder(type)
 
         @JvmStatic
         fun <T> builder(type: Class<T>) = Builder(type)
 
-        @JvmStatic
-        fun Fields?.toTest(): Predicate<Field> {
-            this ?: return Predicate { true }
+        fun Fields?.toTest(): (Field) -> Boolean {
+            this ?: return { true }
             if (use.isNotEmpty()) {
                 val set = use.toSet()
-                return Predicate { set.contains(it.name) }
+                return { set.contains(it.name) }
             }
             if (omit.isNotEmpty()) {
                 val set = omit.toSet()
-                return Predicate { !set.contains(it.name) }
+                return { !set.contains(it.name) }
             }
             if (useRegex.isNotEmpty()) {
                 val regex = useRegex.toRegex()
-                return Predicate { it.name.matches(regex) }
+                return { it.name.matches(regex) }
             }
             if (omitRegex.isNotEmpty()) {
                 val regex = omitRegex.toRegex()
-                return Predicate { !it.name.matches(regex) }
+                return { !it.name.matches(regex) }
             }
-            return Predicate { true }
+            return { true }
         }
     }
 }

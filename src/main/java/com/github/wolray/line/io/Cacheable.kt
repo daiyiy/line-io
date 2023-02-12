@@ -1,7 +1,6 @@
 package com.github.wolray.line.io
 
 import java.io.File
-import java.io.FileInputStream
 
 /**
  * @author wolray
@@ -20,41 +19,19 @@ abstract class Cacheable<T, S> {
         }
     }
 
-    private fun cacheFile(
-        file: String, suffix: String,
-        reader: () -> LineReader.Text<T>,
-        writer: () -> LineWriter<T>
-    ): S {
-        val path = file + suffix
-        val f = File(path)
-        return cacheBy(object : Cache<T> {
-            override fun exists() = f.exists()
-
-            override fun read() = reader.invoke().read { FileInputStream(f) }.also {
-                if (it is CsvReader<T>.Session) {
-                    it.skipLines(1)
-                }
-            }
-
-            override fun write(ts: Iterable<T>) = writer.invoke().write(path).also {
-                if (it is CsvWriter.Session) {
-                    it.autoHeader()
-                }
-            }.with(ts)
-        })
-    }
-
     @JvmOverloads
     fun cacheCsv(file: String, type: Class<T>, sep: String = ","): S {
-        return cacheCsv(file, DataMapper.simple(type, sep))
+        return cacheCsv(file, DataMapper.from(type, sep))
     }
 
     fun cacheCsv(file: String, mapper: DataMapper<T>): S {
-        return cacheFile(file, ".csv", mapper::toReader, mapper::toWriter)
-    }
-
-    fun cacheJson(file: String, type: Class<T>): S {
-        return cacheFile(file, ".txt", { LineReader.byJson(type) }, { LineWriter.byJson() })
+        val path = "$file.csv"
+        val f = File(path)
+        return cacheBy(object : Cache<T> {
+            override fun exists() = f.exists()
+            override fun read() = mapper.toReader().read(f).skipLines(1)
+            override fun write(ts: Iterable<T>) = mapper.toWriter().write(path).autoHeader().with(ts)
+        })
     }
 
     interface Cache<T> {
