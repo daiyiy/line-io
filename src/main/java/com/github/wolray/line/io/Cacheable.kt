@@ -20,6 +20,7 @@ abstract class Cacheable<T, S> {
     }
 
     @JvmOverloads
+    @Deprecated("Use toSeq().cacheBy(LineCache.byCsv(...))", ReplaceWith("cacheBy"))
     fun cacheCsv(file: String, type: Class<T>, sep: String = ","): S {
         return cacheCsv(file, DataMapper.from(type, sep))
     }

@@ -23,29 +23,6 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
     protected abstract fun toIterator(source: S): Iterator<V>
     protected abstract fun toSeq(source: S): Seq<V>
 
-    open class Csv<T> internal constructor(val sep: String, valuesConverter: ValuesConverter.Csv<T>) :
-        LineReader<InputSource, List<String>, T>(valuesConverter),
-        IsReader<LineReader<InputSource, List<String>, T>.Session> {
-
-        override fun splitHeader(v: List<String>): List<String> = v
-
-        override fun toIterator(source: InputSource): Iterator<List<String>> {
-            return BufferedReader(InputStreamReader(source.call()))
-                .lineSequence()
-                .map { it.split(sep, limit = limit) }
-                .iterator()
-        }
-
-        override fun toSeq(source: InputSource): Seq<List<String>> = Seq {
-            BufferedReader(InputStreamReader(source.call())).use { reader ->
-                while (true) {
-                    val s = reader.readLine()
-                    if (s != null) it.accept(s.split(sep, limit = limit)) else break
-                }
-            }
-        }
-    }
-
     class Excel<T> internal constructor(
         private val sheetIndex: Int,
         converter: ValuesConverter.Excel<T>
@@ -163,17 +140,11 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
         }.toIntArray()
 
         @JvmStatic
-        fun <T> byCsv(sep: String, type: Class<T>): Csv<T> {
-            return Csv(sep, ValuesConverter.Csv(TypeValues(type)))
-        }
+        @Deprecated("Unnecessary, use CsvReader.of", ReplaceWith("CsvReader"))
+        fun <T> byCsv(sep: String, type: Class<T>): CsvReader<T> = CsvReader.of(sep, type)
 
         @JvmStatic
-        fun <T> byCsv(sep: String, dataMapper: DataMapper<T>): Csv<T> {
-            return Csv(sep, ValuesConverter.Csv(dataMapper.typeValues))
-        }
-
-        @JvmStatic
-        fun <T> byExcel(type: Class<T>) = byExcel(0, type)
+        fun <T> byExcel(type: Class<T>): Excel<T> = byExcel(0, type)
 
         @JvmStatic
         fun <T> byExcel(sheetIndex: Int, type: Class<T>): Excel<T> {

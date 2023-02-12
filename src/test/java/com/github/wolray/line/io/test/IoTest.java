@@ -19,12 +19,12 @@ public class IoTest {
             .read(getClass(), "/line.xlsx")
             .columns("姓名", "体重", "年龄")
             .skipLines(1)
-            .stream()
-            .cacheCsv("src/test/resources/cache", Person.class)
-            .toList();
-//            .toSeq()
-//            .cacheBy(LineCache.byCsv("src/test/resources/cache", Person.class))
+//            .stream()
+//            .cacheCsv("src/test/resources/cache", Person.class)
 //            .toList();
+            .toSeq()
+            .cacheBy(LineCache.byCsv("src/test/resources/cache.csv", Person.class))
+            .toList();
         System.out.println(seq);
         CsvWriter.of(",", Person.class)
             .write("src/test/resources/line.csv")
