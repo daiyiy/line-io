@@ -6,8 +6,6 @@ import com.github.wolray.seq.Seq
 import com.github.wolray.seq.WithCe
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.util.*
 import kotlin.streams.asStream
 
@@ -65,7 +63,17 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
             return col.trim().fold(0) { acc, c -> acc * 26 + (c - A + 1) } - 1
         }
 
-        private fun preprocess(v: V): Boolean {
+        private fun forHeader(iterator: Iterator<V>) {
+            cols?.apply {
+                if (isNotEmpty()) {
+                    val split = splitHeader(iterator.next())
+                    slots = toSlots(split)
+                }
+            }
+            reorder()
+        }
+
+        private fun forHeader(v: V): Boolean {
             var res = false
             cols?.apply {
                 if (isNotEmpty()) {
@@ -76,16 +84,6 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
             }
             reorder()
             return res
-        }
-
-        private fun preprocess(iterator: Iterator<V>) {
-            cols?.apply {
-                if (isNotEmpty()) {
-                    val split = splitHeader(iterator.next())
-                    slots = toSlots(split)
-                }
-            }
-            reorder()
         }
 
         private fun reorder() {
@@ -103,7 +101,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
                 if (skip > 0) {
                     repeat(skip) { next() }
                 }
-                preprocess(this)
+                forHeader(this)
             }
         } ?: Collections.emptyIterator()
 
@@ -123,7 +121,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
         fun toSeq(): Seq<T> = Seq {
             var i = skip
             WithCe.call(errorType) { toSeq(source) }?.supply { t ->
-                if (i < 0 || i-- == 0 && !preprocess(t)) {
+                if (i < 0 || i-- == 0 && !forHeader(t)) {
                     it.accept(converter(t))
                 }
             }
