@@ -9,9 +9,7 @@ import java.lang.reflect.Method
  */
 object SeqScope {
     fun <T> Array<T>.seq(): Seq<T> = Seq.of(*this)
-    fun <T> Iterable<T>.seq(): Seq<T> = Seq.of(this)
-    inline fun <reified T> Seq<T>.toArray(): Array<T> =
-        toObjArray { arrayOfNulls(it) }
+    inline fun <reified T> Seq<T>.toArray(): Array<T> = toObjArray { arrayOfNulls(it) }
 }
 
 object MethodScope {
