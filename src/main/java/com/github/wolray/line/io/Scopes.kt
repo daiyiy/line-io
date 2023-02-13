@@ -1,14 +1,25 @@
 package com.github.wolray.line.io
 
+import com.github.wolray.seq.IntSeq
 import com.github.wolray.seq.Seq
+import com.github.wolray.seq.WithCe
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 
 /**
  * @author wolray
  */
+object IteratorScope {
+    fun <T, E> Iterator<T>.map(mapper: (T) -> E) = object : Iterator<E> {
+        override fun hasNext(): Boolean = this@map.hasNext()
+        override fun next(): E = mapper(this@map.next())
+    }
+}
+
 object SeqScope {
+    fun <T> Iterable<T>.seq(): Seq<T> = Seq.of(this)
     fun <T> Array<T>.seq(): Seq<T> = Seq.of(*this)
+    fun IntArray.seq(): IntSeq = IntSeq.of(*this)
     inline fun <reified T> Seq<T>.toArray(): Array<T> = toObjArray { arrayOfNulls(it) }
 }
 
@@ -38,7 +49,27 @@ object MethodScope {
     }
 }
 
+object EmptyScope {
+    inline fun <T> T.ifNotEmpty(block: T.() -> Unit) {
+        val b = when (this) {
+            is String -> isNotEmpty()
+            is Array<*> -> isNotEmpty()
+            is IntArray -> isNotEmpty()
+            is Collection<*> -> isNotEmpty()
+            is Map<*, *> -> isNotEmpty()
+            is DoubleArray -> isNotEmpty()
+            is LongArray -> isNotEmpty()
+            else -> true
+        }
+        if (b) apply(block)
+    }
+}
+
 object TypeScope {
     inline fun <reified T : Any> Class<*>.isType(checkPrimitive: Boolean = false): Boolean =
         this == T::class.javaObjectType || checkPrimitive && this == T::class.javaPrimitiveType
+
+    inline fun <E : Class<out Exception>, T> E?.ignorableToCall(crossinline block: () -> T): T? {
+        return WithCe.call(this) { block() }
+    }
 }

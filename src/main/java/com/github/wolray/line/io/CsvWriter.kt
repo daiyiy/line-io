@@ -1,5 +1,6 @@
 package com.github.wolray.line.io
 
+import com.github.wolray.line.io.EmptyScope.ifNotEmpty
 import java.io.BufferedWriter
 
 /**
@@ -19,9 +20,7 @@ class CsvWriter<T> internal constructor(
         override fun autoHeader() = apply { addHeader(joiner.joinFields(sep)) }
 
         override fun columnNames(vararg names: String) = apply {
-            if (names.isNotEmpty()) {
-                addHeader(names.joinToString(sep))
-            }
+            names.ifNotEmpty { addHeader(joinToString(sep)) }
         }
 
         override fun preprocess(bw: BufferedWriter) {

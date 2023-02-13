@@ -30,9 +30,7 @@ class TypeValues<T> @JvmOverloads constructor(
         return seq.filter { test(it) && it.modifiers and sft == 0 }.toList()
     }
 
-    override fun supply(c: Consumer<Field>) {
-        values.forEach(c::accept)
-    }
+    override fun supply(c: Consumer<Field>) = values.forEach(c::accept)
 
     class SimpleMethod(val method: Method, val paraType: Class<*>, val returnType: Class<*>)
 

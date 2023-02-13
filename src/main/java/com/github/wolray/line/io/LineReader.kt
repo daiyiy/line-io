@@ -1,9 +1,12 @@
 package com.github.wolray.line.io
 
+import com.github.wolray.line.io.EmptyScope.ifNotEmpty
+import com.github.wolray.line.io.IteratorScope.map
+import com.github.wolray.line.io.SeqScope.seq
+import com.github.wolray.line.io.TypeScope.ignorableToCall
 import com.github.wolray.seq.IsReader
 import com.github.wolray.seq.IsReader.InputSource
 import com.github.wolray.seq.Seq
-import com.github.wolray.seq.WithCe
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.util.*
@@ -34,7 +37,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
         }
 
         override fun toSeq(source: InputSource): Seq<Row> {
-            return Seq.of(XSSFWorkbook(source.call()).getSheetAt(sheetIndex))
+            return XSSFWorkbook(source.call()).getSheetAt(sheetIndex).seq()
         }
     }
 
@@ -64,23 +67,19 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
         }
 
         private fun forHeader(iterator: Iterator<V>) {
-            cols?.apply {
-                if (isNotEmpty()) {
-                    val split = splitHeader(iterator.next())
-                    slots = toSlots(split)
-                }
+            cols?.ifNotEmpty {
+                val split = splitHeader(iterator.next())
+                slots = toSlots(split)
             }
             reorder()
         }
 
         private fun forHeader(v: V): Boolean {
             var res = false
-            cols?.apply {
-                if (isNotEmpty()) {
-                    val split = splitHeader(v)
-                    slots = toSlots(split)
-                    res = true
-                }
+            cols?.ifNotEmpty {
+                val split = splitHeader(v)
+                slots = toSlots(split)
+                res = true
             }
             reorder()
             return res
@@ -88,41 +87,35 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
         private fun reorder() {
             limit = limit.coerceAtLeast(converter.typeValues.size + 1)
-            slots?.apply {
-                if (isNotEmpty()) {
-                    converter.resetOrder(this)
-                    limit = limit.coerceAtLeast(max() + 2)
-                }
+            slots?.ifNotEmpty {
+                converter.resetOrder(this)
+                limit = limit.coerceAtLeast(max() + 2)
             }
         }
 
-        private fun tempIterator(): Iterator<V> = WithCe.call(errorType) {
+        fun sequence(): Sequence<T> = Sequence(::toIterator)
+
+        @Deprecated("Use better toSeq", replaceWith = ReplaceWith("toSeq"))
+        fun stream(): DataStream<T> = DataStream.of {
+            toIterator().asSequence().asStream()
+        }
+
+        fun toIterator(): Iterator<T> = errorType.ignorableToCall {
             toIterator(source).apply {
                 if (skip > 0) {
                     repeat(skip) { next() }
                 }
                 forHeader(this)
             }
-        } ?: Collections.emptyIterator()
-
-        fun sequence(): Sequence<T> = Sequence(::iterator)
-
-        @Deprecated("Use better toSeq", replaceWith = ReplaceWith("toSeq"))
-        fun stream(): DataStream<T> = DataStream.of {
-            tempIterator().asSequence().map(converter).asStream()
-        }
-
-        fun iterator() = object : Iterator<T> {
-            val iterator = tempIterator()
-            override fun hasNext(): Boolean = iterator.hasNext()
-            override fun next(): T = converter(iterator.next())
-        }
+        }?.map(converter) ?: Collections.emptyIterator()
 
         fun toSeq(): Seq<T> = Seq {
-            var i = skip
-            WithCe.call(errorType) { toSeq(source) }?.supply { t ->
-                if (i < 0 || i-- == 0 && !forHeader(t)) {
-                    it.accept(converter(t))
+            errorType.ignorableToCall {
+                var i = skip
+                toSeq(source).supply { v ->
+                    if (i < 0 || i-- == 0 && !forHeader(v)) {
+                        it.accept(converter(v))
+                    }
                 }
             }
         }

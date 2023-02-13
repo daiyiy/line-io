@@ -1,5 +1,6 @@
 package com.github.wolray.line.io
 
+import com.github.wolray.line.io.EmptyScope.ifNotEmpty
 import java.lang.reflect.Field
 import java.util.function.Function
 
@@ -78,20 +79,20 @@ class DataMapper<T> @JvmOverloads constructor(
 
         fun Fields?.toTest(): (Field) -> Boolean {
             this ?: return { true }
-            if (use.isNotEmpty()) {
-                val set = use.toSet()
+            use.ifNotEmpty {
+                val set = toSet()
                 return { set.contains(it.name) }
             }
-            if (omit.isNotEmpty()) {
-                val set = omit.toSet()
+            omit.ifNotEmpty {
+                val set = toSet()
                 return { !set.contains(it.name) }
             }
-            if (useRegex.isNotEmpty()) {
-                val regex = useRegex.toRegex()
+            useRegex.ifNotEmpty {
+                val regex = toRegex()
                 return { it.name.matches(regex) }
             }
-            if (omitRegex.isNotEmpty()) {
-                val regex = omitRegex.toRegex()
+            omitRegex.ifNotEmpty {
+                val regex = toRegex()
                 return { !it.name.matches(regex) }
             }
             return { true }
