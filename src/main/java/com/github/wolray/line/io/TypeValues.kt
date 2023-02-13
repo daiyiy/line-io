@@ -1,6 +1,7 @@
 package com.github.wolray.line.io
 
 import com.github.wolray.line.io.DataMapper.Companion.toTest
+import com.github.wolray.line.io.MethodScope.annotation
 import com.github.wolray.seq.Seq
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -11,7 +12,8 @@ import java.util.function.Consumer
  * @author wolray
  */
 class TypeValues<T> @JvmOverloads constructor(
-    val type: Class<T>, fields: Fields? = null
+    val type: Class<T>,
+    fields: Fields? = type.annotation()
 ) : Seq<Field> {
     val values: List<Field> = getFields(type, fields)
     val size: Int = values.size
