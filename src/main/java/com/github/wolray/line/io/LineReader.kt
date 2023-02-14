@@ -20,6 +20,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
     fun read(source: S): Session = Session(source)
 
+    protected open fun getHeader(source: S): List<String>? = null
     protected abstract fun splitHeader(v: V): List<String>
     protected abstract fun toIterator(source: S): Iterator<V>
     protected abstract fun toSeq(source: S): Seq<V>
@@ -50,7 +51,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
         fun ignoreError(type: Class<out Exception>) = apply { errorType = type }
         fun skipLines(n: Int) = apply { skip = n }
-        @Deprecated("Bad name, use columns instead", ReplaceWith("columns"))
+        @Deprecated("Bad name, use columns instead", ReplaceWith("this.columns()"))
         fun csvHeader(vararg col: String) = columns(*col)
         fun columns(vararg col: String) = apply { cols = arrayOf(*col) }
         fun columns(vararg index: Int) = apply { slots = index }
@@ -68,7 +69,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
         private fun forHeader(iterator: Iterator<V>) {
             cols?.ifNotEmpty {
-                val split = splitHeader(iterator.next())
+                val split = getHeader(source) ?: splitHeader(iterator.next())
                 slots = toSlots(split)
             }
             reorder()
@@ -77,9 +78,8 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
         private fun forHeader(v: V): Boolean {
             var res = false
             cols?.ifNotEmpty {
-                val split = splitHeader(v)
-                slots = toSlots(split)
-                res = true
+                val header = getHeader(source) ?: splitHeader(v).also { res = true }
+                slots = toSlots(header)
             }
             reorder()
             return res
@@ -89,7 +89,7 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
             limit = limit.coerceAtLeast(converter.typeValues.size + 1)
             slots?.ifNotEmpty {
                 converter.resetOrder(this)
-                limit = limit.coerceAtLeast(max() + 2)
+                limit = limit.coerceAtLeast((maxOrNull() ?: 0) + 2)
             }
         }
 
@@ -124,14 +124,14 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
     companion object {
         private const val A = 'A'
 
-        internal fun Array<String>.toSlots(split: List<String>): IntArray = map {
-            split.indexOf(it).apply {
-                if (this < 0) throw NoSuchElementException("$it not in $split")
+        fun Array<String>.toSlots(header: List<String>): IntArray = map {
+            header.indexOf(it).apply {
+                if (this < 0) throw NoSuchElementException("$it not in $header")
             }
         }.toIntArray()
 
         @JvmStatic
-        @Deprecated("Unnecessary, use CsvReader.of", ReplaceWith("CsvReader"))
+        @Deprecated("Unnecessary, use CsvReader.of", ReplaceWith("CsvReader.of"))
         fun <T> byCsv(sep: String, type: Class<T>): CsvReader<T> = CsvReader.of(sep, type)
 
         @JvmStatic
