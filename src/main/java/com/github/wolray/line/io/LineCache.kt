@@ -21,7 +21,7 @@ abstract class LineCache<T>(val path: String) : SeqCache<T> {
         @JvmStatic
         fun <T> byCsv(file: String, mapper: DataMapper<T>) = object : LineCache<T>("$file.csv") {
             override fun read(): Seq<T> = mapper.toReader().read(cacheFile).skipLines(1).toSeq()
-            override fun write(ts: Iterable<T>) = mapper.toWriter().write(path).autoHeader().with(ts)
+            override fun write(ts: Iterable<T>) = mapper.toWriter().write(ts::forEach).autoHeader().toFile(path)
         }
     }
 }
