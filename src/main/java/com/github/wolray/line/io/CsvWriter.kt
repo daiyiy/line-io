@@ -27,13 +27,11 @@ class CsvWriter<T> internal constructor(
             names.ifNotEmpty { addHeader(joinToString(sep)) }
         }
 
-        override fun preprocess(file: String, writer: CommonWriter<*>) {
-            if (utf8 && file.endsWith(".csv")) {
-                writer.write('\ufeff')
-            }
+        override fun preprocess(writer: CommonWriter<*>) {
+            if (utf8) writer.write('\ufeff')
         }
     }
-    
+
     inner class Session internal constructor(file: String) : LineWriter<T>.Session(file) {
         private var utf8 = false
 

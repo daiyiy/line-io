@@ -3,6 +3,7 @@ package com.github.wolray.line.io.test;
 import com.github.wolray.line.io.CsvWriter;
 import com.github.wolray.line.io.LineCache;
 import com.github.wolray.line.io.LineReader;
+import com.github.wolray.seq.ArraySeq;
 import lombok.ToString;
 import org.junit.Test;
 
@@ -27,9 +28,12 @@ public class IoTest {
             .toList();
         System.out.println(seq);
         CsvWriter.of(",", Person.class)
-            .write("src/test/resources/line.csv")
+            .write(seq)
             .autoHeader()
-            .with(seq);
+            .toFile("src/test/resources/line.csv");
+//            .write("src/test/resources/line.csv")
+//            .autoHeader()
+//            .with(seq);
     }
 
     @ToString

@@ -29,14 +29,14 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
         open fun markUtf8() = this
         open fun autoHeader() = this
         open fun columns(vararg names: String) = this
-        protected open fun preprocess(file: String, writer: CommonWriter<*>) {}
+        protected open fun preprocess(writer: CommonWriter<*>) {}
 
         @JvmOverloads
         fun toFile(file: String, append: Boolean = false) {
             BufferedWriter(FileWriter(file, append)).use { bw ->
                 bw.commonWriter().run {
                     if (!append) {
-                        preprocess(file, this)
+                        preprocess(this)
                         headers.forEach(::writeLine)
                     }
                     seq.reduce(toReducer(formatter))
