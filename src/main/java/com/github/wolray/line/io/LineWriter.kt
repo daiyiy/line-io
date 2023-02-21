@@ -45,7 +45,7 @@ open class LineWriter<T>(private val formatter: Function<T, String>) {
         }
 
         fun toContent(): String = StringBuilder().commonWriter().run {
-            preprocess("", this)
+            preprocess(this)
             headers.forEach(::writeLine)
             seq.reduce(toReducer(formatter)).toString()
         }

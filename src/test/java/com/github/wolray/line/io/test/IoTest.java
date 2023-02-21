@@ -16,7 +16,7 @@ public class IoTest {
     @Test
     public void test() {
         LineReader.Excel<Person> excel = LineReader.byExcel(Person.class);
-        List<Person> seq = excel
+        ArraySeq<Person> seq = excel
             .read(getClass(), "/line.xlsx")
             .columns("姓名", "体重", "年龄")
             .skipLines(1)
