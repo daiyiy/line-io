@@ -5,6 +5,7 @@ import com.github.wolray.seq.IsReader.InputSource
 import com.github.wolray.seq.Seq
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.function.Consumer
 
 /**
  * @author wolray
@@ -24,27 +25,27 @@ class CsvReader<T> internal constructor(val sep: String, converter: ValuesConver
             .iterator()
     }
 
-    private fun toSeq(reader: BufferedReader): Seq<List<String>> = Seq {
+    private fun BufferedReader.supply(c: Consumer<List<String>>) {
         while (true) {
-            val s = reader.readLine()
-            if (s != null) it.accept(split(s)) else break
+            val s = readLine()
+            if (s != null) c.accept(split(s)) else break
         }
     }
 
-    private fun toSeqRemovingMarker(reader: BufferedReader): Seq<List<String>> = Seq {
+    private fun BufferedReader.supplyRemovingMarker(c: Consumer<List<String>>) {
         var rest = false
         while (true) {
-            val s = if (rest) reader.readLine() else {
+            val s = if (rest) readLine() else {
                 rest = true
-                reader.readLine().removePrefix(CsvWriter.utf8Marker.toString())
+                readLine().removePrefix(CsvWriter.utf8Marker.toString())
             }
-            if (s != null) it.accept(split(s)) else break
+            if (s != null) c.accept(split(s)) else break
         }
     }
 
-    override fun toSeq(source: InputSource): Seq<List<String>> {
-        return BufferedReader(InputStreamReader(source.call())).use {
-            if (skip > 0) toSeq(it) else toSeqRemovingMarker(it)
+    override fun toSeq(source: InputSource): Seq<List<String>> = Seq { c ->
+        BufferedReader(InputStreamReader(source.call())).use {
+            if (skip > 0) it.supply(c) else it.supplyRemovingMarker(c)
         }
     }
 
