@@ -75,6 +75,9 @@ class DataMapper<T> @JvmOverloads constructor(
         fun <T> of(type: Class<T>) = Builder(type)
 
         @JvmStatic
+        fun <T> pojo(type: Class<T>) = Builder(type).pojo().build()
+
+        @JvmStatic
         fun <T> builder(type: Class<T>) = Builder(type)
 
         fun Fields?.toTest(): (Field) -> Boolean {
