@@ -12,14 +12,8 @@ class CsvWriter<T> internal constructor(
     private val sep: String
 ) : LineWriter<T>(joiner.toFormatter(sep)) {
 
-    override fun write(seq: Seq<T>) = CsvSession(seq)
-
-    @Deprecated("Use write(seq) instead", ReplaceWith("write(seq)"))
-    override fun write(file: String) = Session(file)
-
-    inner class CsvSession internal constructor(seq: Seq<T>) : LineWriter<T>.TextSession(seq) {
+    override fun write(seq: Seq<T>) = object : LineWriter<T>.TextSession(seq) {
         private var utf8 = false
-
         override fun markUtf8() = apply { utf8 = true }
         override fun autoHeader() = apply { addHeader(joiner.joinFields(sep)) }
 
@@ -28,9 +22,12 @@ class CsvWriter<T> internal constructor(
         }
 
         override fun preprocess(writer: CommonWriter<*>) {
-            if (utf8) writer.write('\ufeff')
+            if (utf8) writer.write(utf8Marker)
         }
     }
+
+    @Deprecated("Use write(seq) instead", ReplaceWith("write(seq)"))
+    override fun write(file: String) = Session(file)
 
     inner class Session internal constructor(file: String) : LineWriter<T>.Session(file) {
         private var utf8 = false
@@ -44,12 +41,14 @@ class CsvWriter<T> internal constructor(
 
         override fun preprocess(bw: BufferedWriter) {
             if (utf8 && file.endsWith(".csv")) {
-                bw.write('\ufeff'.code)
+                bw.write(utf8Marker.code)
             }
         }
     }
 
     companion object {
+        const val utf8Marker = '\ufeff'
+
         @JvmStatic
         fun <T> of(sep: String, type: Class<T>): CsvWriter<T> {
             return CsvWriter(ValuesJoiner(TypeValues(type)), sep)

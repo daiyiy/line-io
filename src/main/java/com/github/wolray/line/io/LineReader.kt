@@ -16,6 +16,7 @@ import kotlin.streams.asStream
  * @author wolray
  */
 abstract class LineReader<S, V, T> protected constructor(val converter: ValuesConverter<V, *, T>) {
+    protected var skip = 0
     protected var limit = 0
 
     fun read(source: S): Session = Session(source)
@@ -44,7 +45,6 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
     inner class Session(private val source: S) : Chainable<Session> {
         private var errorType: Class<out Exception>? = null
-        private var skip: Int = 0
         private var slots: IntArray? = null
         private var cols: Array<String>? = null
         override val self get() = this

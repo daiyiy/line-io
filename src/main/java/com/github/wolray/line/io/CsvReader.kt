@@ -24,12 +24,27 @@ class CsvReader<T> internal constructor(val sep: String, converter: ValuesConver
             .iterator()
     }
 
-    override fun toSeq(source: InputSource): Seq<List<String>> = Seq {
-        BufferedReader(InputStreamReader(source.call())).use { reader ->
-            while (true) {
-                val s = reader.readLine()
-                if (s != null) it.accept(split(s)) else break
+    private fun toSeq(reader: BufferedReader): Seq<List<String>> = Seq {
+        while (true) {
+            val s = reader.readLine()
+            if (s != null) it.accept(split(s)) else break
+        }
+    }
+
+    private fun toSeqRemovingMarker(reader: BufferedReader): Seq<List<String>> = Seq {
+        var rest = false
+        while (true) {
+            val s = if (rest) reader.readLine() else {
+                rest = true
+                reader.readLine().removePrefix(CsvWriter.utf8Marker.toString())
             }
+            if (s != null) it.accept(split(s)) else break
+        }
+    }
+
+    override fun toSeq(source: InputSource): Seq<List<String>> {
+        return BufferedReader(InputStreamReader(source.call())).use {
+            if (skip > 0) toSeq(it) else toSeqRemovingMarker(it)
         }
     }
 
