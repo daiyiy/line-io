@@ -70,6 +70,7 @@ object LogInOne {
         }
 
         fun close(): String {
+            lastTag = null
             return writer.backer.toString()
         }
     }

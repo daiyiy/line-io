@@ -144,9 +144,7 @@ class OneLogger(val log: Logger, val cls: String) : Logger by log {
     }
 
     fun <T> timing(message: String): UnaryOperator<Supplier<T>> {
-        return UnaryOperator {
-            Supplier { timing(message, it) }
-        }
+        return timing(this, message)
     }
 
     companion object {
