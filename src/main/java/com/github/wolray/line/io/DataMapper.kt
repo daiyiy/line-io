@@ -63,19 +63,11 @@ class DataMapper<T> @JvmOverloads constructor(
 
         @JvmStatic
         @JvmOverloads
-        @Deprecated("Bad name, use from instead", ReplaceWith("from"))
-        fun <T> simple(type: Class<T>, sep: String = DEFAULT_SEP) = DataMapper(TypeValues(type), sep)
+        fun <T> of(type: Class<T>, sep: String = DEFAULT_SEP) = DataMapper(TypeValues(type), sep)
 
         @JvmStatic
         @JvmOverloads
-        fun <T> from(type: Class<T>, sep: String = DEFAULT_SEP) = DataMapper(TypeValues(type), sep)
-
-        @JvmStatic
-        @Deprecated("Bad name, use builder instead", ReplaceWith("builder"))
-        fun <T> of(type: Class<T>) = Builder(type)
-
-        @JvmStatic
-        fun <T> pojo(type: Class<T>) = Builder(type).pojo().build()
+        fun <T> pojo(type: Class<T>, sep: String = DEFAULT_SEP) = Builder(type).pojo().build(sep)
 
         @JvmStatic
         fun <T> builder(type: Class<T>) = Builder(type)

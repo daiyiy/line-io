@@ -10,7 +10,6 @@ import com.github.wolray.seq.Seq
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.util.*
-import kotlin.streams.asStream
 
 /**
  * @author wolray
@@ -51,8 +50,6 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
         fun ignoreError(type: Class<out Exception>) = apply { errorType = type }
         fun skipLines(n: Int) = apply { skip = n }
-        @Deprecated("Bad name, use columns instead", ReplaceWith("this.columns()"))
-        fun csvHeader(vararg col: String) = columns(*col)
         fun columns(vararg col: String) = apply { cols = arrayOf(*col) }
         fun columns(vararg index: Int) = apply { slots = index }
         fun columnsBefore(index: Int) = columnsRange(0, index)
@@ -95,11 +92,6 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
 
         fun sequence(): Sequence<T> = Sequence(::toIterator)
 
-        @Deprecated("Use better toSeq", replaceWith = ReplaceWith("toSeq"))
-        fun stream(): DataStream<T> = DataStream.of {
-            toIterator().asSequence().asStream()
-        }
-
         fun toIterator(): Iterator<T> = errorType.ignorableToCall {
             toIterator(source).apply {
                 if (skip > 0) {
@@ -129,10 +121,6 @@ abstract class LineReader<S, V, T> protected constructor(val converter: ValuesCo
                 if (this < 0) throw NoSuchElementException("$it not in $header")
             }
         }.toIntArray()
-
-        @JvmStatic
-        @Deprecated("Unnecessary, use CsvReader.of", ReplaceWith("CsvReader.of"))
-        fun <T> byCsv(sep: String, type: Class<T>): CsvReader<T> = CsvReader.of(sep, type)
 
         @JvmStatic
         fun <T> byExcel(type: Class<T>): Excel<T> = byExcel(0, type)
