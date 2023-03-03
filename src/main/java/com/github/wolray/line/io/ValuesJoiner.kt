@@ -13,7 +13,7 @@ import java.util.function.Function
  * @author wolray
  */
 class ValuesJoiner<T>(typeValues: TypeValues<T>) {
-    val attrs: ArraySeq<Attr> = typeValues.map { Attr(it, mapper) }.toList()
+    val attrs: ArraySeq<Attr> = typeValues.map { it -> Attr(it, mapper) }.toList()
 
     init {
         TypeValues.processSimpleMethods(typeValues.type, ::processMethod)
@@ -26,8 +26,8 @@ class ValuesJoiner<T>(typeValues: TypeValues<T>) {
             val mapper = method.asMapper<Any?, String>("")
             val test = method.annotation<Fields>().toTest()
             attrs
-                .filter { test(it.field) && it.field.type == paraType }
-                .supply { it.mapper = mapper }
+                .filter { a -> test(a.field) && a.field.type == paraType }
+                .supply { a -> a.mapper = mapper }
         }
     }
 

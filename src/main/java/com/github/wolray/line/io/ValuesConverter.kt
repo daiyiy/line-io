@@ -116,18 +116,18 @@ abstract class ValuesConverter<V, E, T>(val typeValues: TypeValues<T>) : (V) -> 
             val returnType = m.returnType
             if (method.paraType.isType<String>()) {
                 val test = m.annotation<Fields>().toTest()
-                val seq = attrs.seq().filter { test(it.field) }
+                val seq = attrs.seq().filter { a -> test(a.field) }
                 if (returnType.isType<String>()) {
                     val mapper = m.asMapper<String, String>("")
-                    seq.supply {
-                        val old = it.mapper
-                        it.mapper = { s -> old(mapper(s)) }
+                    seq.supply { a ->
+                        val old = a.mapper
+                        a.mapper = { s -> old(mapper(s)) }
                     }
                 } else {
                     val mapper = m.asMapper<String, Any>()
                     seq
-                        .filter { it.field.type == returnType }
-                        .supply { it.mapper = mapper }
+                        .filter { a -> a.field.type == returnType }
+                        .supply { a -> a.mapper = mapper }
                 }
             }
         }
